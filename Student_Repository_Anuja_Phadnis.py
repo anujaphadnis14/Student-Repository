@@ -9,6 +9,7 @@
 
 #importing necessary libraries
 from typing import List, Dict, DefaultDict, Tuple, Optional, Iterator, IO, Set
+
 import os
 from os import listdir
 from prettytable import PrettyTable
@@ -104,6 +105,7 @@ class Instructor:
     pretty_table: List[str] = ["CWID", "Name", "Dept", "Course", "Students"] 
 
     def __init__(self,cwid: str, name: str, department: str)-> None:
+
         """Initializing the instructor variables"""
 
         self.cwid: str = cwid
@@ -298,7 +300,7 @@ def main():
     """To verify the above methods"""
 
     try:
-        uni = University('E:/stevens/SSW 810 Python/Programs & Assignments/Stevens')
+        uni = University('E:/stevens/SSW 810 Python/Programs & Assignments/Student Repository/Stevens')
         uni.print_pretty_tables()
     except Exception as e:
         print(e)
@@ -313,7 +315,7 @@ def main():
             print(e)
     else:
         print("Thank You!")
-    
+
 if __name__ == '__main__':
     main()
 
