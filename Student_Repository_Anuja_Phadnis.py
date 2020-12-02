@@ -1,19 +1,20 @@
 """ 
-    SSW 810 Homework 10
+    SSW 810 Homework 11
     Name: Anuja Phadnis
-    Purpose: To create a data repository for students, instructors and courses
-             To display completed courses, remaining courses and Student's GPA
+    Purpose: To create a relational database for the Student Data Management system
     CWID:10446233
-    Date: 11/18/2020
+    Date: 12/02/2020
 """
 
 #importing necessary libraries
 from typing import List, Dict, DefaultDict, Tuple, Optional, Iterator, IO, Set
 
 import os
+import sqlite3
 from os import listdir
 from prettytable import PrettyTable
 from collections import defaultdict
+
 
 class Major:
     """To store the courses related to major"""
@@ -84,12 +85,11 @@ class Student:
     def calculate_gpa(self) -> None:
         """ Function to calculate gpa for the courses """
 
-        sum: float = 0.0
+        sum: float = 0
         
+        for course in self.passed_courses:
+            sum = sum + self.grades_to_gpa[self.allocated_grades[course]]
         if(len(self.passed_courses)>0):
-            for course in self.passed_courses:
-                sum = sum + self.grades_to_gpa[self.allocated_grades[course]]
-            
             self.gpa  = float(sum) / float(len(self.passed_courses))
         else:
             self.gpa = 0.0
@@ -157,6 +157,9 @@ class University:
 
         print("Instructor Info")
         self.pretty_print_instructor()
+
+        print("Student Grade Info")
+        self.pretty_print_student_grade()
     
     def check_validity(self,directory:str)-> None:
         """ Validating the directory"""
@@ -179,6 +182,19 @@ class University:
 
         if not 'majors.txt' in files:
             raise FileNotFoundError("Error: majors.txt file not found ")
+
+    def student_grades_table_db(self, db_path) -> None:
+        """To provide all the info related to grades for the students"""
+
+        db: sqlite3.Connection = sqlite3.connect(db_path)
+        query: str = """ select S.Name Name,S.CWID, G.Course, G.Grade, I.Name Instructor 
+                        from students S, grades G, instructors I 
+                        where S.CWID = G.StudentCWID and I.CWID = G.InstructorCWID 
+                        Order By S.Name; """
+        
+        for row in db.execute(query):
+            yield(row)
+        db.close()
     
     def populate_rem_courses(self) ->None:
         """To populate remaining courses"""
@@ -199,7 +215,7 @@ class University:
     def populate_instructor(self) -> None:
         """ To populate instructor info """
 
-        for cwid, name, department in self.file_reader(os.path.join(self.directory, "instructors.txt"), 3, "|", True):
+        for cwid, name, department in self.file_reader(os.path.join(self.directory, "instructors.txt"), 3, "\t", True):
             if self.instructors.__contains__(cwid):
                 print(f"Instructor CWID {cwid} is duplicate")
             else:
@@ -208,7 +224,7 @@ class University:
     def populate_students(self) -> None:
         """ To populate the student info"""
         
-        for cwid, name, major in self.file_reader(os.path.join(self.directory, "students.txt"), 3, ";", True):
+        for cwid, name, major in self.file_reader(os.path.join(self.directory, "students.txt"),3, "\t", True):
             if self.students.__contains__(cwid):
                 print(f"Student CWID {cwid} is duplicate")
             else:
@@ -217,7 +233,7 @@ class University:
     def populate_grades(self) -> None:
         """ To populate the grades and update the student and instructor instances accordingly """
         
-        for student_cwid, course, grade, instructor_cwid in self.file_reader(os.path.join(self.directory, "grades.txt"), 4, "|", True):
+        for student_cwid, course, grade, instructor_cwid in self.file_reader(os.path.join(self.directory, "grades.txt"), 4, "\t", True):
             if self.valid_grade(student_cwid, instructor_cwid):
                 self.students[student_cwid].add_grade(course, grade)
                 self.instructors[instructor_cwid].add_course(course) 
@@ -294,6 +310,16 @@ class University:
             for course in instructor.courses_head_count:
                 print_pt.add_row(instructor.instructor_info(course))
         
+        print(print_pt)
+    
+    def pretty_print_student_grade(self) -> None:
+        """To print the student grades info pretty table"""
+
+        db_file: str = "E:/stevens/SSW 810 Python/Programs & Assignments/Student Repository/810_startup.db"
+        
+        print_pt: PrettyTable = PrettyTable(field_names=('Name', 'CWID', 'Course', 'Grade', 'Instructor'))
+        for student_grades in self.student_grades_table_db(db_file):
+            print_pt.add_row(student_grades)
         print(print_pt)
 
 def main():
